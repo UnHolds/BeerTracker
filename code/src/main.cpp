@@ -2,6 +2,7 @@
 #include <Wire.h>
 
 #include "display.h"
+#include "input.h"
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -15,14 +16,20 @@
 
 Display display(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+
+Input input(14, 5, 17, 16, 4);
+
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(SDA_SCREEN, SCK_SCREEN);
   display.begin();
   display.splash_screen();
-
+  input.begin();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+
+  delay(1000);
+  input.print_counter();
 }
