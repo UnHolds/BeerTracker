@@ -41,7 +41,7 @@ void Message::storeData() {
 }
 
 void Message::loadData() {
-    memset(&this->send_message, 0, sizeof(MessageData));
+    //memset(&this->send_message, 0, sizeof(MessageData));
     File file = LittleFS.open(FILENAME, "r"); // "r" for read
     if (!file) {
         #ifdef DEBUG
@@ -59,19 +59,27 @@ void Message::loadData() {
     }
     #endif
 
-    if (bytesRead == sizeof(MessageData)) {
-        this->updateSendData();
+    if(bytesRead == sizeof(MessageData)){
+        this->updateSendData(true);
     }
 }
 
-void Message::updateSendData() {
+void Message::updateSendData(bool all) {
+    #ifdef DEBUG
+        Serial.println("Updating send_message data form recv_message");
+    #endif
     this->send_message.time = std::max(this->recv_message.time, this->send_message.time);
     for(int i = 0; i < NUM_USER; i++) {
-        UserData recv_user = this->recv_message.users[i];
-        UserData send_user = this->send_message.users[i];
-        send_user.beer = std::max(recv_user.beer, send_user.beer);
-        send_user.beer = std::max(recv_user.water, send_user.water);
-        send_user.beer = std::max(recv_user.shots, send_user.shots);
+        UserData* recv_user = &this->recv_message.users[i];
+        UserData* send_user = &this->send_message.users[i];
+        send_user->beer = std::max(recv_user->beer, send_user->beer);
+        send_user->water = std::max(recv_user->water, send_user->water);
+        send_user->shots = std::max(recv_user->shots, send_user->shots);
+        strcpy(send_user->name, recv_user->name);
+    }
+
+    if(all){
+        this->send_message.user_id = this->recv_message.user_id;
     }
 }
 
@@ -122,7 +130,7 @@ void Message::handleOnDataRecv(const uint8_t * mac, const uint8_t *incomingData,
     }
     #endif
 
-    this->updateSendData();
+    this->updateSendData(false);
 }
 
 void Message::handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {

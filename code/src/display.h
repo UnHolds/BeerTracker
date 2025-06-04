@@ -6,11 +6,21 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "input.h"
+#include "message.h"
+
+
+enum class Menu {
+    MAIN,
+    BEER,
+    WATER,
+    SHOT,
+    USER
+};
 
 class Display {
     public:
         Display(int width, int heigth, const char* version);
-        void begin();
+        void begin(Message* message);
         void splash_screen();
         void update(InputType input);
         void clear();
@@ -19,9 +29,18 @@ class Display {
         int width;
         int height;
         const char* version;
+        Menu menu = Menu::MAIN;
         Adafruit_SSD1306 display;
+        int main_menu_idx = 0;
+        Message* message;
+        int temp_user_id = -1;
 
         void print_center_x(String text, int y_pos, int text_size);
+        void print_x_y(String text, int x_pos, int y_pos, int text_size);
+        void update_main_menu(InputType input);
+        void increment_menu(InputType input, uint8_t* value);
+        void print_menu(const char* name);
+        void change_user(InputType input);
 };
 
 

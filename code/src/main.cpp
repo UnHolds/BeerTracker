@@ -85,26 +85,28 @@ void add_peers(){
 
 void setup() {
 
-
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
     Serial.begin(115200);
-    rtc.setTime(30, 24, 15, 17, 1, 2021);
+    rtc.setTime(30, 24, 15, 17, 1, 2021); //TODO update
     Wire.begin(SDA_SCREEN, SCK_SCREEN);
 
     if (!LittleFS.begin(true)) {
+        Serial.println("Formatting LittleFs!!");
         if (!LittleFS.begin()) {
             Serial.println("FATAL: Failed to mount LittleFS even after formatting!");
             return;
         }
     }
 
-    display.begin();
+    input.begin();
+    message.begin();
+
+    display.begin(&message);
     if (wakeup_reason != ESP_SLEEP_WAKEUP_TIMER){
         display.splash_screen();
     }
-    input.begin();
-    message.begin();
+
     add_peers();
 
     #ifdef DEBUG
@@ -130,17 +132,6 @@ void setup() {
   }
   #endif
 
-
-  //random setup
-
-  UserData* u0 = message.getUser(0);
-  strcpy(u0->name, "Usr0");
-  UserData* u1 = message.getUser(1);
-  strcpy(u1->name, "Usr1");
-  UserData* u2 = message.getUser(2);
-  strcpy(u2->name, "Usr2");
-  UserData* u3 = message.getUser(3);
-  strcpy(u3->name, "Usr3");
 }
 
 long last_command = millis();
@@ -162,10 +153,6 @@ void loop() {
     }
 
     display.update(t);
-    delay(2000);
-
-    if(true){
-        message.send();
-    }
+    //message.send();
 
 }
