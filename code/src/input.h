@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "button.h"
 
-enum {
+enum class InputType {
     UP,
     DOWN,
     LEFT,
@@ -13,19 +13,24 @@ enum {
     UP_LONG,
     DOWN_LONG,
     LEFT_LONG,
-    RIGTH_LONG,
+    RIGHT_LONG,
     CENTER_LONG,
     UP_DOUBLE,
     DOWN_DOUBLE,
     LEFT_DOUBLE,
     RIGHT_DOUBLE,
+    CENTER_DOUBLE,
+    NONE
 };
+
+
+
 
 class Input {
     public:
         Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin);
         void begin();
-        void print_counter();
+        InputType get_input();
 
     private:
         Button up_btn;
@@ -33,7 +38,6 @@ class Input {
         Button left_btn;
         Button right_btn;
         Button center_btn;
-
 
 };
 

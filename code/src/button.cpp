@@ -9,6 +9,17 @@ void Button::begin() {
     attachInterruptArg(this->pin, Button::isr_static_wrapper, this, CHANGE);
 }
 
+ButtonPress Button::get_button_press() {
+
+    if(this->button_press == ButtonPress::PRESS && millis() - this->last_button_press < this->double_press_threshold){
+        //return non because press can still be double press
+        return ButtonPress::NONE;
+    }
+    ButtonPress cur_press = this->button_press;
+    this->button_press = ButtonPress::NONE; //reset
+    return cur_press;
+}
+
 void IRAM_ATTR Button::isr_static_wrapper(void* arg) {
     Button* instance = static_cast<Button*>(arg);
     if (instance) {
@@ -29,13 +40,13 @@ void IRAM_ATTR Button::isr(){
 
         if(press_duration > this->long_press_threshold) {
             //long press
-            this->counter += 10000000;
+            this->button_press = ButtonPress::LONG_PRESS;
         }else if (current_millis - this->last_button_press < this->double_press_threshold){
             //double press
-            this->counter += 1000;
+            this->button_press = ButtonPress::DOUBLE_PRESS;
         }else{
             //single press
-            this->counter += 1;
+            this->button_press = ButtonPress::PRESS;
             this->last_button_press = current_millis; // i think this is only needed for single press
         }
 

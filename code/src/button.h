@@ -3,20 +3,27 @@
 
 #include <Arduino.h>
 
+enum class ButtonPress {
+    PRESS,
+    DOUBLE_PRESS,
+    LONG_PRESS,
+    NONE
+};
 
 class Button {
     public:
         Button(int pin);
         void begin();
-        int counter = 0;
+        ButtonPress get_button_press();
 
     private:
+        ButtonPress button_press = ButtonPress::NONE;
         int pin;
         long last_change = millis();
         long last_button_press = 0;
         long debounce_interval = 70;
-        long long_press_threshold = 1500; // 1.5s
-        long double_press_threshold = 1500; // 1.5s
+        long long_press_threshold = 800; // 0.8s
+        long double_press_threshold = 500; // 0.5s
         static void IRAM_ATTR isr_static_wrapper(void* arg);
 
         void IRAM_ATTR isr();

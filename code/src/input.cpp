@@ -3,12 +3,69 @@
 Input::Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin) : up_btn(up_pin), down_btn(down_pin), left_btn(left_pin), right_btn(right_pin), center_btn(center_pin) {
 }
 
-void Input::print_counter() {
-    Serial.printf("Btn_up: %d\n", this->up_btn.counter);
-    //Serial.printf("Btn_down: %d\n", this->down_btn.counter);
-    //Serial.printf("Btn_left: %d\n", this->left_btn.counter);
-    //Serial.printf("Btn_rigth: %d\n", this->right_btn.counter);
-    //Serial.printf("Btn_center: %d\n", this->center_btn.counter);
+InputType Input::get_input() {
+    switch(this->up_btn.get_button_press()) {
+        case ButtonPress::PRESS:
+            return InputType::UP;
+        break;
+        case ButtonPress::DOUBLE_PRESS:
+            return InputType::UP_DOUBLE;
+        break;
+        case ButtonPress::LONG_PRESS:
+            return InputType::UP_LONG;
+        break;
+    }
+
+    switch(this->down_btn.get_button_press()) {
+        case ButtonPress::PRESS:
+            return InputType::DOWN;
+        break;
+        case ButtonPress::DOUBLE_PRESS:
+            return InputType::DOWN_DOUBLE;
+        break;
+        case ButtonPress::LONG_PRESS:
+            return InputType::DOWN_LONG;
+        break;
+    }
+
+    switch(this->left_btn.get_button_press()) {
+        case ButtonPress::PRESS:
+            return InputType::LEFT;
+        break;
+        case ButtonPress::DOUBLE_PRESS:
+            return InputType::LEFT_DOUBLE;
+        break;
+        case ButtonPress::LONG_PRESS:
+            return InputType::LEFT_LONG;
+        break;
+    }
+
+    switch(this->right_btn.get_button_press()) {
+        case ButtonPress::PRESS:
+            return InputType::RIGHT;
+        break;
+        case ButtonPress::DOUBLE_PRESS:
+            return InputType::RIGHT_DOUBLE;
+        break;
+        case ButtonPress::LONG_PRESS:
+            return InputType::RIGHT_LONG;
+        break;
+    }
+
+    switch(this->center_btn.get_button_press()) {
+        case ButtonPress::PRESS:
+            return InputType::CENTER;
+        break;
+        case ButtonPress::DOUBLE_PRESS:
+            return InputType::CENTER_DOUBLE;
+        break;
+        case ButtonPress::LONG_PRESS:
+            return InputType::CENTER_LONG;
+        break;
+    }
+
+
+    return InputType::NONE;
 }
 
 void Input::begin() {
