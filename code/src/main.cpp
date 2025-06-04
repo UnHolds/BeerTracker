@@ -149,7 +149,7 @@ void loop() {
     }
 
     if(current_millis - last_command > STANDBY_TIMEOUT){
-        //go_to_sleep();
+        go_to_sleep();
     }
 
     display.update(t);
