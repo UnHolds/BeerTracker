@@ -1,6 +1,12 @@
 #include "input.h"
 
 Input::Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin) : up_btn(up_pin), down_btn(down_pin), left_btn(left_pin), right_btn(right_pin), center_btn(center_pin) {
+
+    this->wakeup_pin_mask = BUTTON_PIN_BITMASK(up_pin) |
+                            BUTTON_PIN_BITMASK(down_pin) |
+                            BUTTON_PIN_BITMASK(left_pin) |
+                            BUTTON_PIN_BITMASK(right_pin) |
+                            BUTTON_PIN_BITMASK(center_pin);
 }
 
 InputType Input::get_input() {
@@ -69,9 +75,12 @@ InputType Input::get_input() {
 }
 
 void Input::begin() {
+
     this->up_btn.begin();
     this->down_btn.begin();
     this->left_btn.begin();
     this->right_btn.begin();
     this->center_btn.begin();
+
+    esp_sleep_enable_ext1_wakeup(this->wakeup_pin_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
 }

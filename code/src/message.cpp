@@ -1,0 +1,166 @@
+#include "message.h"
+
+Message* Message::_instance = nullptr;
+
+void globalOnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+    if (Message::_instance != nullptr) {
+        Message::_instance->handleOnDataRecv(mac, incomingData, len);
+    }
+}
+
+void globalOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+    if (Message::_instance != nullptr) {
+        Message::_instance->handleOnDataSent(mac_addr, status);
+    }
+}
+
+UserData* Message::getUser(int idx){
+    return &this->send_message.users[idx];
+}
+
+void Message::storeData() {
+    File file = LittleFS.open(FILENAME, "w"); // "w" for write, creates if not exists, truncates if exists
+    if (!file) {
+        #ifdef DEBUG
+        Serial.println("Failed to open file for writing.");
+        #endif
+        return;
+    }
+
+    size_t bytesWritten = file.write((uint8_t*)&this->send_message, sizeof(MessageData));
+
+    #ifdef DEBUG
+    if (bytesWritten != sizeof(MessageData)) {
+        Serial.printf("WARNING: Mismatch in bytes written. Expected %u, got %u\n", sizeof(MessageData), bytesWritten);
+    } else {
+        Serial.printf("Successfully wrote %u bytes to '%s'\n", bytesWritten, FILENAME);
+    }
+    #endif
+
+    file.close();
+}
+
+void Message::loadData() {
+    memset(&this->send_message, 0, sizeof(MessageData));
+    File file = LittleFS.open(FILENAME, "r"); // "r" for read
+    if (!file) {
+        #ifdef DEBUG
+        Serial.println("Failed to open file for reading.");
+        #endif
+        return;
+    }
+
+    size_t bytesRead = file.read((uint8_t*)&this->recv_message, sizeof(MessageData));
+    #ifdef DEBUG
+    if (bytesRead != sizeof(MessageData)) {
+        Serial.printf("WARNING: Mismatch in bytes read. Expected %u, got %u\n", sizeof(MessageData), bytesRead);
+    } else {
+        Serial.printf("Successfully read %u bytes from '%s'\n", bytesRead, FILENAME);
+    }
+    #endif
+
+    if (bytesRead == sizeof(MessageData)) {
+        this->updateSendData();
+    }
+}
+
+void Message::updateSendData() {
+    this->send_message.time = std::max(this->recv_message.time, this->send_message.time);
+    for(int i = 0; i < NUM_USER; i++) {
+        UserData recv_user = this->recv_message.users[i];
+        UserData send_user = this->send_message.users[i];
+        send_user.beer = std::max(recv_user.beer, send_user.beer);
+        send_user.beer = std::max(recv_user.water, send_user.water);
+        send_user.beer = std::max(recv_user.shots, send_user.shots);
+    }
+}
+
+
+void Message::begin() {
+
+    Message::_instance = this;
+
+    #ifdef DEBUG
+    Serial.print("ESP Board MAC Address: ");
+    Serial.println(WiFi.macAddress());
+    #endif
+    WiFi.mode(WIFI_STA);
+
+    if (esp_now_init() != ESP_OK) {
+        #ifdef DEBUG
+        Serial.println("Error initializing ESP-NOW");
+        #endif
+    }
+
+    esp_now_register_recv_cb(esp_now_recv_cb_t(globalOnDataRecv));
+    esp_now_register_send_cb(globalOnDataSent);
+
+    this->peerInfo.channel = 0;
+    this->peerInfo.encrypt = false;
+
+    this->loadData();
+}
+
+void Message::handleOnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+
+    memcpy(&this->recv_message, incomingData, sizeof(MessageData));
+    #ifdef DEBUG
+    Serial.print("Bytes received: ");
+    Serial.println(len);
+    Serial.print("Time: ");
+    Serial.println(this->recv_message.time);
+    for(int i = 0; i < NUM_USER; i++) {
+        UserData userdata = this->recv_message.users[i];
+        Serial.print("Name: ");
+        Serial.println(userdata.name);
+        Serial.print("Beer: ");
+        Serial.println(userdata.beer);
+        Serial.print("Water: ");
+        Serial.println(userdata.water);
+        Serial.print("Shots: ");
+        Serial.println(userdata.shots);
+    }
+    #endif
+
+    this->updateSendData();
+}
+
+void Message::handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+
+    char macStr[18];
+    Serial.print("Packet to: ");
+    // Copies the sender mac address to a string
+    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    Serial.print(macStr);
+    Serial.print(" send status:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+
+void Message::add_peer(uint8_t mac[]) {
+    memcpy(peerInfo.peer_addr, mac, 6);
+
+    if (esp_now_add_peer(&peerInfo) != ESP_OK){
+        #ifdef DEBUG
+        Serial.println("Failed to add peer");
+        #endif
+    }
+
+}
+
+void Message::send() {
+
+    this->storeData();
+
+    esp_err_t result = esp_now_send(0, (uint8_t *) &this->send_message, sizeof(MessageData));
+
+    #ifdef DEBUG
+    if (result == ESP_OK) {
+        Serial.println("Sent with success");
+    }
+    else {
+        Serial.println("Error sending the data");
+    }
+    #endif
+}

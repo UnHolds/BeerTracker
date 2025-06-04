@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include "button.h"
+#include "driver/rtc_io.h"
+
+#define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)
 
 enum class InputType {
     UP,
@@ -38,7 +41,7 @@ class Input {
         Button left_btn;
         Button right_btn;
         Button center_btn;
-
+        uint64_t wakeup_pin_mask;
 };
 
 

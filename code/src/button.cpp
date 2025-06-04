@@ -5,7 +5,7 @@ Button::Button(int pin) {
 }
 
 void Button::begin() {
-    pinMode(this->pin, INPUT_PULLUP);
+    pinMode(this->pin, INPUT_PULLDOWN);
     attachInterruptArg(this->pin, Button::isr_static_wrapper, this, CHANGE);
 }
 
@@ -35,7 +35,7 @@ void IRAM_ATTR Button::isr(){
         return;
     }
 
-    if(digitalRead(this->pin) == HIGH){
+    if(digitalRead(this->pin) == LOW){
         long press_duration = current_millis - this->last_change;
 
         if(press_duration > this->long_press_threshold) {
