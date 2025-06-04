@@ -1,18 +1,28 @@
 #include <Arduino.h>
+#include <Wire.h>
 
-// put function declarations here:
-int myFunction(int, int);
+#include "display.h"
+
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32// OLED display height, in pixels
+
+#define SDA_SCREEN 22
+#define SCK_SCREEN 23
+
+#define OLED_RESET -1 // Reset pin
+
+
+Display display(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  Wire.begin(SDA_SCREEN, SCK_SCREEN);
+  display.begin();
+  display.splash_screen();
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
 }
