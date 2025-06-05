@@ -83,6 +83,10 @@ void add_peers(){
 }
 
 
+long last_command = millis();
+
+
+
 void setup() {
 
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -129,12 +133,12 @@ void setup() {
         default:
             Serial.printf("Wakeup was not caused by deep sleep: %d\n", wakeup_reason);
         break;
-  }
-  #endif
+    }
+    #endif
 
+    last_command = millis();
 }
 
-long last_command = millis();
 
 
 void loop() {
