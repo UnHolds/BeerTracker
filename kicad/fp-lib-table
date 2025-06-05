@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "BeerTracker")(type "KiCad")(uri "${KIPRJMOD}/Lib/BeerTracker.pretty")(options "")(descr ""))
+)
