@@ -1,9 +1,10 @@
 #include "display.h"
 
-Display::Display(int width, int heigth, const char* version) : display(width, heigth, &Wire, -1) {
+Display::Display(int width, int heigth, const char* version, ESP32Time* rtc) : display(width, heigth, &Wire, -1) {
     this->width = width;
     this->height = height;
     this->version = version;
+    this->rtc = rtc;
 }
 
 void Display::begin(Message* message) {
@@ -13,6 +14,16 @@ void Display::begin(Message* message) {
     }
     this->display.clearDisplay();
     this->message = message;
+
+    pinMode(BAT_PIN, INPUT);
+    pinMode(PWR_PIN, INPUT);
+
+    if((&this->message->send_message)->time > rtc->getEpoch()){
+        #ifdef DEBUG
+        Serial.println("updating the epoch to the time stored at esp32");
+        #endif
+        this->rtc->setTime((&this->message->send_message)->time, 0);
+    }
 }
 
 void Display::print_x_y(String text, int x_pos, int y_pos, int text_size) {
@@ -42,9 +53,32 @@ void Display::splash_screen() {
     this->display.display();
 }
 
+void Display::print_battery() {
+    char bat_v[6];
+    float pwr = 3.3 / 4095.0 * analogRead(PWR_PIN);
+    float bat = 3.3 / 4095.0 * analogRead(BAT_PIN);
+
+    if(pwr > 2){
+        this->print_x_y("PWR", this->width - 6 * 3, 0, 1);
+    } else {
+        snprintf (bat_v, sizeof(bat_v), "%.2fVV", bat);
+        this->print_x_y(bat_v, this->width - 6 * (sizeof(bat_v)), 0, 1);
+    }
+}
+
+void Display::print_time() {
+    char time_str[32];
+    // 2024-06-27 23:24:25
+    sprintf(time_str, "%04d-%02d-%02d %02d:%02d:%02d", rtc->getYear(), rtc->getMonth(), rtc->getDay(), rtc->getHour(true), rtc->getMinute(), rtc->getSecond());
+    this->print_center_x(time_str, 64-7, 1);
+}
+
 void Display::update(InputType input) {
     this->display.clearDisplay();
+    //print the username in the topleft
     this->print_x_y(this->message->send_message.users[this->message->send_message.user_id].name, 0, 0, 1);
+    print_battery();
+    print_time();
 
 
     switch(this->menu){
@@ -60,8 +94,17 @@ void Display::update(InputType input) {
         case Menu::WATER:
             this->increment_menu(input, &this->message->send_message.users[this->message->send_message.user_id].water);
         break;
-        case Menu::USER:
+        case Menu::SELECT_USER:
             this->change_user(input);
+        break;
+        case Menu::RESET:
+            this->reset(input);
+        break;
+        case Menu::SHOW_USERS:
+            this->show_users(input);
+        break;
+        case Menu::SET_TIME:
+            this->set_time(input);
         break;
     }
 
@@ -69,23 +112,41 @@ void Display::update(InputType input) {
 }
 
 void Display::change_user(InputType input) {
-    if(this->temp_user_id == -1){
-        this->temp_user_id = this->message->send_message.user_id;
+    if(this->submenu_idx == -1){
+        this->submenu_idx = this->message->send_message.user_id;
     }
-    this->print_center_x(this->message->send_message.users[this->temp_user_id].name, 32 - 8, 2);
+
+    //safety
+    this->submenu_idx = this->submenu_idx % NUM_USER;
+
+    this->print_center_x(this->message->send_message.users[this->submenu_idx].name, 32 - 8, 2);
     this->print_x_y("<", 10, 32 - 8, 2);
     this->print_x_y(">", 110, 32 - 8, 2);
 
     if(input == InputType::LEFT){
-        this->temp_user_id = (this->temp_user_id + NUM_USER - 1) % NUM_USER;
+        this->submenu_idx = (this->submenu_idx + NUM_USER - 1) % NUM_USER;
     }
     if(input == InputType::RIGHT){
-        this->temp_user_id = (this->temp_user_id + 1) % NUM_USER;
+        this->submenu_idx = (this->submenu_idx + 1) % NUM_USER;
     }
     if(input == InputType::CENTER){
-        (&this->message->send_message)->user_id = this->temp_user_id;
+        (&this->message->send_message)->user_id = this->submenu_idx;
         this->menu = Menu::MAIN;
         this->message->send();
+    }
+}
+
+void Display::reset(InputType input) {
+    this->print_center_x("<- Y  (RST)  N ->", 32 - 8, 1);
+
+    if(input == InputType::LEFT){
+        for(int i = 0; i < NUM_USER; i++){
+            strcpy((&this->message->send_message)->users[i].name, RST_USERNAMES[i].c_str());
+        }
+        this->menu = Menu::MAIN;
+    }
+    if(input == InputType::RIGHT){
+        this->menu = Menu::MAIN;
     }
 }
 
@@ -113,9 +174,109 @@ void Display::increment_menu(InputType input, uint8_t* value) {
 
 }
 
+void Display::set_time(InputType input) {
+
+    if(this->submenu_idx == -1){
+        this->submenu_idx = 0;
+    }
+
+    //year, month, day, hour, min
+    this->submenu_idx = this->submenu_idx % 5;
+
+    char num_s[16];
+
+    long epoch = this->rtc->getEpoch();
+    long change = 0;
+
+    switch(this->submenu_idx) {
+        case 0: //year
+            this->print_center_x("YEAR", 1, 1);
+            sprintf(num_s, "%d", this->rtc->getYear());
+            change = 31556926;
+        break;
+        case 1: //month
+            this->print_center_x("MONTH", 1, 1);
+            sprintf(num_s, "%d", this->rtc->getMonth());
+            change = 2629743;
+        break;
+        case 2: //day
+            this->print_center_x("DAY", 1, 1);
+            sprintf(num_s, "%d", this->rtc->getDay());
+            change = 86400 ;
+        break;
+        case 3: //hour
+            this->print_center_x("HOUR", 1, 1);
+            sprintf(num_s, "%d", this->rtc->getHour());
+            change = 60 * 24;
+        break;
+        case 4: //min
+            this->print_center_x("MINUTE", 1, 1);
+            sprintf(num_s, "%d", this->rtc->getMinute());
+            change = 60;
+        break;
+
+    }
+
+    this->print_center_x(num_s, 32 - 8, 2);
+    this->print_x_y("-", 10, 32 - 8, 2);
+    this->print_x_y("+", 110, 32 - 8, 2);
+
+    if(input == InputType::LEFT){
+        this->rtc->setTime(epoch - change);
+    }
+    if(input == InputType::RIGHT){
+        this->rtc->setTime(epoch + change);
+    }
+    if(input == InputType::UP){
+        this->submenu_idx = (5 + this->submenu_idx - 1) % 5;
+    }
+    if(input == InputType::DOWN){
+        this->submenu_idx = (this->submenu_idx + 1) % 5;
+    }
+    if(input == InputType::CENTER){
+        this->menu = Menu::MAIN;
+    }
+}
+
+void Display::show_users(InputType input) {
+    if(this->submenu_idx == -1){
+        this->submenu_idx = this->message->send_message.user_id;
+    }
+
+    //safety
+    this->submenu_idx = this->submenu_idx % NUM_USER;
+
+    this->print_x_y("<", 10, 32 - 8, 2);
+    this->print_x_y(">", 110, 32 - 8, 2);
+
+    int offset = 15;
+    char buf[16];
+
+    this->print_center_x(this->message->send_message.users[this->submenu_idx].name, offset, 1);
+    offset += 5;
+
+    snprintf (buf, sizeof(buf), "Beer: %d", this->message->send_message.users[this->submenu_idx].beer);
+    this->print_center_x(buf, offset+8, 1);
+    snprintf (buf, sizeof(buf), "Water: %d", this->message->send_message.users[this->submenu_idx].water);
+    this->print_center_x(buf, offset+16, 1);
+    snprintf (buf, sizeof(buf), "Shots: %d", this->message->send_message.users[this->submenu_idx].shots);
+    this->print_center_x(buf, offset+24, 1);
+
+    if(input == InputType::LEFT){
+        this->submenu_idx = (this->submenu_idx + NUM_USER - 1) % NUM_USER;
+    }
+    if(input == InputType::RIGHT){
+        this->submenu_idx = (this->submenu_idx + 1) % NUM_USER;
+    }
+
+    if(input == InputType::CENTER){
+        this->menu = Menu::MAIN;
+    }
+}
+
 void Display::update_main_menu(InputType input) {
 
-    int num_entries = 4;
+    int num_entries = 7;
 
     if(input == InputType::UP) {
         this->main_menu_idx = (this->main_menu_idx + num_entries - 1) % num_entries;
@@ -148,10 +309,31 @@ void Display::update_main_menu(InputType input) {
             };
         break;
         case 3:
-            this->print_menu("User");
+            this->print_menu("Sel User");
             if(input == InputType::CENTER){
-                this->menu = Menu::USER;
+                this->menu = Menu::SELECT_USER;
                 this-> change_user(InputType::NONE);
+            };
+        break;
+        case 4:
+            this->print_menu("Reset");
+            if(input == InputType::CENTER){
+                this->menu = Menu::RESET;
+                this-> reset(InputType::NONE);
+            };
+        break;
+        case 5:
+            this->print_menu("Users");
+            if(input == InputType::CENTER){
+                this->menu = Menu::SHOW_USERS;
+                this-> show_users(InputType::NONE);
+            };
+        break;
+        case 6:
+            this->print_menu("Set Time");
+             if(input == InputType::CENTER){
+                this->menu = Menu::SET_TIME;
+                this-> set_time(InputType::NONE);
             };
         break;
     }

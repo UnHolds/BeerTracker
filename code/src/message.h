@@ -8,9 +8,9 @@
 #include <esp_now.h>
 #include "FS.h"
 #include <LittleFS.h>
+#include "config.h"
+#include <ESP32Time.h>
 
-#define NUM_USER 4
-#define MAX_USERNAME_LEN 16
 #define FILENAME "/data.bin"
 
 //#define FORMAT_LITTLEFS_IF_FAILED true
@@ -23,14 +23,14 @@ typedef struct UserData{
 } UserData;
 
 typedef struct MessageData {
-    long time;
+    unsigned long time;
     uint8_t user_id;
     UserData users[NUM_USER];
 } MessageData;
 
 class Message {
     public:
-        void begin();
+        void begin(ESP32Time* rtc);
         void add_peer(uint8_t mac[]);
         void send();
         UserData* getUser(int idx);
@@ -46,6 +46,7 @@ class Message {
         MessageData recv_message;
         void storeData();
         void loadData();
+        ESP32Time* rtc;
 
 };
 

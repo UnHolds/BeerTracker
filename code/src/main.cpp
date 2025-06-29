@@ -5,6 +5,7 @@
 #include "display.h"
 #include "input.h"
 #include "message.h"
+#include "config.h"
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -13,19 +14,16 @@
 #define SCK_SCREEN 23
 #define OLED_RESET -1 // Reset pin
 
-#define secToMs(secs) secs * 1000
-#define secToUs(secs) secs * 1000 * 1000
-
-#define STANDBY_TIMEOUT secToMs(5) // 5s - time until the deceive goes to sleep after no input
-#define SLEEP_TIME secToUs(200) //200s
-
-#define VERSION "0.1"
-
-
-Display display(SCREEN_WIDTH, SCREEN_HEIGHT, VERSION);
-Input input(14, 27, 26, 15, 4);
 ESP32Time rtc(3600);
+
+
+Display display(SCREEN_WIDTH, SCREEN_HEIGHT, VERSION, &rtc);
+Input input(14, 27, 26, 15, 4);
+
 Message message;
+
+unsigned long update_send_time = ULONG_MAX;
+unsigned long update_sleep_time = ULONG_MAX;
 
 #ifdef DEBUG
 String InputTypetoString(InputType type) {
@@ -69,22 +67,35 @@ String InputTypetoString(InputType type) {
 #endif
 
 void go_to_sleep() {
-    esp_sleep_enable_timer_wakeup(SLEEP_TIME);
+    long time_till_next_wakeup = rtc.getLocalEpoch() % SLEEP_TIME;
+    #ifdef DEBUG
+    Serial.print("Timer sleeping for: ");
+    Serial.println(time_till_next_wakeup);
+    #endif
+    esp_sleep_enable_timer_wakeup(secToUs(time_till_next_wakeup));
     display.clear();
     esp_deep_sleep_start();
 }
 
+void send_update_message() {
+    #ifdef DEBUG
+    Serial.println("Sending update message");
+    #endif
+    message.send();
+}
+
 void add_peers(){
-    uint8_t peer1[] =  {0x20, 0x6a, 0x8a, 0xa3, 0x60, 0x49};
-    uint8_t peer2[] = {0x34, 0x5F, 0x45, 0x38, 0xED, 0xA4}; // olimex
-    uint8_t peer3[] = {0x24, 0x6F, 0x28, 0x24, 0x6D, 0x20}; //other esp
+    uint8_t peer1[] = {0x34, 0x5F, 0x45, 0x38, 0xED, 0xA4}; // olimex 2
+    uint8_t peer2[] = {0xEC, 0xC9, 0xFF, 0xB8, 0x7B, 0x68}; // olimex 1
+    uint8_t peer3[] = {0x34, 0x5F, 0x45, 0x37, 0x84, 0x7C}; //olimex 3
     //message.add_peer(peer1);
+    message.add_peer(peer1);
     message.add_peer(peer2);
+    message.add_peer(peer3);
 }
 
 
 long last_command = millis();
-
 
 
 void setup() {
@@ -92,7 +103,6 @@ void setup() {
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
     Serial.begin(115200);
-    rtc.setTime(30, 24, 15, 17, 1, 2021); //TODO update
     Wire.begin(SDA_SCREEN, SCK_SCREEN);
 
     if (!LittleFS.begin(true)) {
@@ -104,7 +114,7 @@ void setup() {
     }
 
     input.begin();
-    message.begin();
+    message.begin(&rtc);
 
     display.begin(&message);
     if (wakeup_reason != ESP_SLEEP_WAKEUP_TIMER){
@@ -136,6 +146,19 @@ void setup() {
     }
     #endif
 
+    if(wakeup_reason == ESP_SLEEP_WAKEUP_TIMER){
+        update_send_time = millis() + UPDATE_AWAKE_TIME / 2;
+        update_sleep_time = millis() + UPDATE_AWAKE_TIME;
+    }else{
+        update_send_time = ULONG_MAX;
+        update_sleep_time = ULONG_MAX;
+    }
+
+    #ifdef DEBUG
+        Serial.print("current epoch: ");
+        Serial.println(rtc.getEpoch());
+    #endif
+
     last_command = millis();
 }
 
@@ -152,11 +175,27 @@ void loop() {
         #endif
     }
 
-    if(current_millis - last_command > STANDBY_TIMEOUT){
+    if(current_millis - last_command > STANDBY_TIMEOUT && update_sleep_time == ULONG_MAX){
+        #ifdef DEBUG
+            Serial.println("Going to sleep standby timeout");
+        #endif
         go_to_sleep();
     }
 
     display.update(t);
-    //message.send();
 
+    //send update msg
+    if(current_millis > update_send_time){
+        send_update_message();
+        update_send_time = ULONG_MAX;
+    }
+
+    //goto sleep
+    if(current_millis > update_sleep_time){
+        #ifdef DEBUG
+            Serial.println("Going to sleep after update");
+        #endif
+        update_sleep_time == ULONG_MAX;
+        go_to_sleep();
+    }
 }

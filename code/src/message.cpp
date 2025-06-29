@@ -69,6 +69,8 @@ void Message::updateSendData(bool all) {
         Serial.println("Updating send_message data form recv_message");
     #endif
     this->send_message.time = std::max(this->recv_message.time, this->send_message.time);
+    this->rtc->setTime(std::max(this->send_message.time, this->rtc->getEpoch()), 0);
+
     for(int i = 0; i < NUM_USER; i++) {
         UserData* recv_user = &this->recv_message.users[i];
         UserData* send_user = &this->send_message.users[i];
@@ -84,9 +86,10 @@ void Message::updateSendData(bool all) {
 }
 
 
-void Message::begin() {
+void Message::begin(ESP32Time* rtc) {
 
     Message::_instance = this;
+    this->rtc = rtc;
 
     #ifdef DEBUG
     Serial.print("ESP Board MAC Address: ");
@@ -158,6 +161,8 @@ void Message::add_peer(uint8_t mac[]) {
 }
 
 void Message::send() {
+
+    this->send_message.time = this->rtc->getEpoch();
 
     this->storeData();
 
