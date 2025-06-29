@@ -142,12 +142,17 @@ void Display::reset(InputType input) {
     if(input == InputType::LEFT){
         for(int i = 0; i < NUM_USER; i++){
             strcpy((&this->message->send_message)->users[i].name, RST_USERNAMES[i].c_str());
+            (&this->message->send_message)->users[i].beer = 0;
+            (&this->message->send_message)->users[i].water = 0;
+            (&this->message->send_message)->users[i].shots = 0;
+            (&this->message->send_message)->users[i].idx = 0;
         }
         this->menu = Menu::MAIN;
     }
     if(input == InputType::RIGHT){
         this->menu = Menu::MAIN;
     }
+    rtc->setTime(1751203509); //Sun Jun 29 2025 13:25:09 GMT+0000
 }
 
 void Display::print_menu(const char* name) {

@@ -147,7 +147,7 @@ void setup() {
     #endif
 
     if(wakeup_reason == ESP_SLEEP_WAKEUP_TIMER){
-        update_send_time = millis() + UPDATE_AWAKE_TIME / 2;
+        update_send_time = millis() + (UPDATE_AWAKE_TIME - USER_SEND_OFFSET * NUM_USER) / 2 + USER_SEND_OFFSET * message.current_user_idx();
         update_sleep_time = millis() + UPDATE_AWAKE_TIME;
     }else{
         update_send_time = ULONG_MAX;

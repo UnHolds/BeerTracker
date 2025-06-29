@@ -17,6 +17,7 @@
 
 typedef struct UserData{
     char name[MAX_USERNAME_LEN];
+    uint64_t idx;
     uint8_t beer;
     uint8_t water;
     uint8_t shots;
@@ -34,6 +35,7 @@ class Message {
         void add_peer(uint8_t mac[]);
         void send();
         UserData* getUser(int idx);
+        uint8_t current_user_idx();
         static Message* _instance;
         void handleOnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len);
         void handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);

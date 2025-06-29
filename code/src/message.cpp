@@ -64,6 +64,10 @@ void Message::loadData() {
     }
 }
 
+uint8_t Message::current_user_idx() {
+    return this->send_message.user_id;
+}
+
 void Message::updateSendData(bool all) {
     #ifdef DEBUG
         Serial.println("Updating send_message data form recv_message");
@@ -72,12 +76,15 @@ void Message::updateSendData(bool all) {
     this->rtc->setTime(std::max(this->send_message.time, this->rtc->getEpoch()), 0);
 
     for(int i = 0; i < NUM_USER; i++) {
+
         UserData* recv_user = &this->recv_message.users[i];
         UserData* send_user = &this->send_message.users[i];
-        send_user->beer = std::max(recv_user->beer, send_user->beer);
-        send_user->water = std::max(recv_user->water, send_user->water);
-        send_user->shots = std::max(recv_user->shots, send_user->shots);
-        strcpy(send_user->name, recv_user->name);
+        if(send_user->idx > recv_user->idx){ //only update if newer idx
+            send_user->beer = std::max(recv_user->beer, send_user->beer);
+            send_user->water = std::max(recv_user->water, send_user->water);
+            send_user->shots = std::max(recv_user->shots, send_user->shots);
+            strcpy(send_user->name, recv_user->name);
+        }
     }
 
     if(all){
@@ -163,6 +170,7 @@ void Message::add_peer(uint8_t mac[]) {
 void Message::send() {
 
     this->send_message.time = this->rtc->getEpoch();
+    this->send_message.users[this->send_message.user_id].idx += 1;
 
     this->storeData();
 
