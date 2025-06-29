@@ -70,19 +70,20 @@ uint8_t Message::current_user_idx() {
 
 void Message::updateSendData(bool all) {
     #ifdef DEBUG
-        Serial.println("Updating send_message data form recv_message");
+        Serial.print("Updating send_message data form recv_message, all: ");
+        Serial.println(all);
     #endif
     this->send_message.time = std::max(this->recv_message.time, this->send_message.time);
     this->rtc->setTime(std::max(this->send_message.time, this->rtc->getEpoch()), 0);
 
     for(int i = 0; i < NUM_USER; i++) {
-
         UserData* recv_user = &this->recv_message.users[i];
         UserData* send_user = &this->send_message.users[i];
-        if(send_user->idx > recv_user->idx){ //only update if newer idx
-            send_user->beer = std::max(recv_user->beer, send_user->beer);
-            send_user->water = std::max(recv_user->water, send_user->water);
-            send_user->shots = std::max(recv_user->shots, send_user->shots);
+        if(recv_user->idx >= send_user->idx){ //only update if newer idx
+            send_user->beer = recv_user->beer;
+            send_user->water = recv_user->water;
+            send_user->shots = recv_user->shots;
+            send_user->idx = recv_user->idx;
             strcpy(send_user->name, recv_user->name);
         }
     }
@@ -141,6 +142,10 @@ void Message::handleOnDataRecv(const uint8_t * mac, const uint8_t *incomingData,
     #endif
 
     this->updateSendData(false);
+    #ifdef DEBUG
+    Serial.println("Storing recv data");
+    #endif
+    this->storeData();
 }
 
 void Message::handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {

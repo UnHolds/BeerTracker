@@ -14,7 +14,7 @@
 #define SCK_SCREEN 23
 #define OLED_RESET -1 // Reset pin
 
-ESP32Time rtc(3600);
+ESP32Time rtc(0);
 
 
 Display display(SCREEN_WIDTH, SCREEN_HEIGHT, VERSION, &rtc);
@@ -24,6 +24,7 @@ Message message;
 
 unsigned long update_send_time = ULONG_MAX;
 unsigned long update_sleep_time = ULONG_MAX;
+bool timer_wakeup;
 
 #ifdef DEBUG
 String InputTypetoString(InputType type) {
@@ -67,10 +68,12 @@ String InputTypetoString(InputType type) {
 #endif
 
 void go_to_sleep() {
-    long time_till_next_wakeup = rtc.getLocalEpoch() % SLEEP_TIME;
+    long time_till_next_wakeup = SLEEP_TIME - rtc.getEpoch() % SLEEP_TIME;
     #ifdef DEBUG
     Serial.print("Timer sleeping for: ");
     Serial.println(time_till_next_wakeup);
+    Serial.print("Wakeuptime: ");
+    Serial.println(rtc.getEpoch() + time_till_next_wakeup);
     #endif
     esp_sleep_enable_timer_wakeup(secToUs(time_till_next_wakeup));
     display.clear();
@@ -149,9 +152,11 @@ void setup() {
     if(wakeup_reason == ESP_SLEEP_WAKEUP_TIMER){
         update_send_time = millis() + (UPDATE_AWAKE_TIME - USER_SEND_OFFSET * NUM_USER) / 2 + USER_SEND_OFFSET * message.current_user_idx();
         update_sleep_time = millis() + UPDATE_AWAKE_TIME;
+        timer_wakeup = true;
     }else{
         update_send_time = ULONG_MAX;
         update_sleep_time = ULONG_MAX;
+        timer_wakeup = false;
     }
 
     #ifdef DEBUG
@@ -170,6 +175,7 @@ void loop() {
     InputType t = input.get_input();
     if(t != InputType::NONE) {
         last_command = current_millis;
+        timer_wakeup = false;
         #ifdef DEBUG
         Serial.println(InputTypetoString(t));
         #endif
@@ -182,7 +188,11 @@ void loop() {
         go_to_sleep();
     }
 
-    display.update(t);
+
+    if(timer_wakeup == false){
+        display.update(t);
+    }
+
 
     //send update msg
     if(current_millis > update_send_time){

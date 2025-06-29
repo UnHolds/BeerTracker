@@ -18,6 +18,6 @@ static String RST_USERNAMES[NUM_USER] = {"UnHold", "Luggi", "Tabaluga", "Someone
 #define UPDATE_AWAKE_TIME (secToMs(10) + USER_SEND_OFFSET * NUM_USER)
 
 
-#define VERSION "0.5"
+#define VERSION "0.8"
 
 #endif
