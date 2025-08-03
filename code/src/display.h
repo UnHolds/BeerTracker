@@ -10,7 +10,7 @@
 #include <ESP32Time.h>
 
 
-#define BAT_PIN 34
+#define BAT_PIN 35
 #define PWR_PIN 39
 
 
