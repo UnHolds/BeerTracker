@@ -19,6 +19,6 @@ static String RST_USERNAMES[NUM_USER] = {"UnHold", "Luggi", "Tabaluga", "Someone
 
 #define LOCK_SCREEN_ENABLE false
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 #endif
