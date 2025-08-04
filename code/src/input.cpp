@@ -1,6 +1,6 @@
 #include "input.h"
 
-Input::Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin) : up_btn(up_pin), down_btn(down_pin), left_btn(left_pin), right_btn(right_pin), center_btn(center_pin) {
+Input::Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin, bool only_single_press) : up_btn(up_pin, only_single_press), down_btn(down_pin, only_single_press), left_btn(left_pin, only_single_press), right_btn(right_pin, only_single_press), center_btn(center_pin, only_single_press) {
 
     this->wakeup_pin_mask = BUTTON_PIN_BITMASK(up_pin) |
                             BUTTON_PIN_BITMASK(down_pin) |

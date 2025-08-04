@@ -67,6 +67,13 @@ void Display::print_battery() {
     }
 }
 
+void Display::lock_screen(){
+    this->clear();
+    this->print_center_x("LOCKED", 24, 2);
+    this->print_center_x("UNLK_SQ: <- -> <- ->", 45, 1);
+    this->display.display();
+}
+
 void Display::print_time() {
     char time_str[32];
     // 2024-06-27 23:24:25

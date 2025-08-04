@@ -32,6 +32,7 @@ class Display {
         void splash_screen();
         void update(InputType input);
         void clear();
+        void lock_screen();
 
     private:
         int width;

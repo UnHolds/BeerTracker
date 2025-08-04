@@ -12,7 +12,7 @@ enum class ButtonPress {
 
 class Button {
     public:
-        Button(int pin);
+        Button(int pin, bool only_single_press);
         void begin();
         ButtonPress get_button_press();
 
@@ -24,6 +24,7 @@ class Button {
         long debounce_interval = 70;
         long long_press_threshold = 800; // 0.8s
         long double_press_threshold = 500; // 0.5s
+        bool only_single_press = false;
         static void IRAM_ATTR isr_static_wrapper(void* arg);
 
         void IRAM_ATTR isr();

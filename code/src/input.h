@@ -31,7 +31,7 @@ enum class InputType {
 
 class Input {
     public:
-        Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin);
+        Input(int up_pin, int down_pin, int left_pin, int right_pin, int center_pin, bool only_single_press);
         void begin();
         InputType get_input();
 

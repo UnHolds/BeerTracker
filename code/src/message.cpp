@@ -168,6 +168,10 @@ void Message::add_peer(uint8_t mac[]) {
         #ifdef DEBUG
         Serial.println("Failed to add peer");
         #endif
+    }else{
+        #ifdef DEBUG
+        Serial.println("Added peer");
+        #endif
     }
 
 }

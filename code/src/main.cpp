@@ -18,13 +18,16 @@ ESP32Time rtc(0);
 
 
 Display display(SCREEN_WIDTH, SCREEN_HEIGHT, VERSION, &rtc);
-Input input(14, 27, 26, 15, 4);
+Input input(14, 27, 26, 15, 4, true);
 
 Message message;
 
 unsigned long update_send_time = ULONG_MAX;
 unsigned long update_sleep_time = ULONG_MAX;
 bool timer_wakeup;
+bool screen_locked = true;
+int screen_lock_sequence_idx = 0;
+InputType unlock_sequence[] = {InputType::LEFT, InputType::RIGHT, InputType::LEFT, InputType::RIGHT};
 
 #ifdef DEBUG
 String InputTypetoString(InputType type) {
@@ -100,8 +103,23 @@ void add_peers(){
 
 long last_command = millis();
 
+void handle_unlock_event(InputType t){
+
+    if(t == unlock_sequence[screen_lock_sequence_idx]){
+        screen_lock_sequence_idx++;
+    }else{
+        screen_lock_sequence_idx == 0;
+    }
+
+    if(screen_lock_sequence_idx == sizeof(unlock_sequence) / sizeof(unlock_sequence[0])){
+        screen_locked = false;
+        screen_lock_sequence_idx = 0;
+    }
+}
 
 void setup() {
+
+    screen_locked = LOCK_SCREEN_ENABLE;
 
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
@@ -165,6 +183,10 @@ void setup() {
     #endif
 
     last_command = millis();
+
+    if(screen_locked) {
+        display.lock_screen();
+    }
 }
 
 
@@ -188,11 +210,18 @@ void loop() {
         go_to_sleep();
     }
 
-
     if(timer_wakeup == false){
+
+        if(screen_locked){
+            handle_unlock_event(t);
+            if(screen_locked){
+                //still locked return
+                return;
+            }
+        }
+
         display.update(t);
     }
-
 
     //send update msg
     if(current_millis > update_send_time){

@@ -17,7 +17,8 @@ static String RST_USERNAMES[NUM_USER] = {"UnHold", "Luggi", "Tabaluga", "Someone
 #define USER_SEND_OFFSET secToMs(1) //each user send 1 sec after the other
 #define UPDATE_AWAKE_TIME (secToMs(16) + USER_SEND_OFFSET * NUM_USER)
 
+#define LOCK_SCREEN_ENABLE false
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 
 #endif

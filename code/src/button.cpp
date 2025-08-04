@@ -1,7 +1,8 @@
 #include "button.h"
 
-Button::Button(int pin) {
+Button::Button(int pin, bool only_single_press) {
     this->pin = pin;
+    this->only_single_press = only_single_press;
 }
 
 void Button::begin() {
@@ -11,7 +12,7 @@ void Button::begin() {
 
 ButtonPress Button::get_button_press() {
 
-    if(this->button_press == ButtonPress::PRESS && millis() - this->last_button_press < this->double_press_threshold){
+    if(this->button_press == ButtonPress::PRESS && millis() - this->last_button_press < this->double_press_threshold && this->only_single_press == false){
         //return non because press can still be double press
         return ButtonPress::NONE;
     }
@@ -38,10 +39,10 @@ void IRAM_ATTR Button::isr(){
     if(digitalRead(this->pin) == LOW){
         long press_duration = current_millis - this->last_change;
 
-        if(press_duration > this->long_press_threshold) {
+        if(press_duration > this->long_press_threshold && this->only_single_press == false) {
             //long press
             this->button_press = ButtonPress::LONG_PRESS;
-        }else if (current_millis - this->last_button_press < this->double_press_threshold){
+        }else if (current_millis - this->last_button_press < this->double_press_threshold && this->only_single_press == false){
             //double press
             this->button_press = ButtonPress::DOUBLE_PRESS;
         }else{
