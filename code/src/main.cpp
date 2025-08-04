@@ -6,6 +6,7 @@
 #include "input.h"
 #include "message.h"
 #include "config.h"
+#include "peers.h"
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -90,22 +91,9 @@ void send_update_message() {
     message.send();
 }
 
-void add_peers(){
-    uint8_t peer_1[] = {0x34, 0x5F, 0x45, 0x37, 0x8C, 0x6C}; // 1
-    uint8_t peer_2[] = {0x34, 0x5F, 0x45, 0x38, 0xED, 0xA4}; // 2
-    uint8_t peer_3[] = {0xEC, 0xC9, 0xFF, 0xB8, 0x79, 0xA0}; // 3
-    uint8_t peer_4[] = {0x34, 0x5F, 0x45, 0x37, 0x8C, 0xB0}; // 4
-    uint8_t peer_5[] = {0x34, 0x5F, 0x45, 0x37, 0x84, 0x7C}; // 5
-    uint8_t peer_6[] = {0x34, 0x5F, 0x45, 0x37, 0x8B, 0x2C}; // 6
-    uint8_t peer_7[] = {0xEC, 0xC9, 0xFF, 0xB8, 0x7B, 0x68}; // 7
 
-    message.add_peer(peer_1);
-    message.add_peer(peer_2);
-    message.add_peer(peer_3);
-    message.add_peer(peer_4);
-    message.add_peer(peer_5);
-    message.add_peer(peer_6);
-    message.add_peer(peer_7);
+void add_peers(){
+    message.add_peers(peers, NUMBER_OF_PEERS);
 }
 
 

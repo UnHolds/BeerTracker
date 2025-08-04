@@ -17,7 +17,7 @@
 
 typedef struct UserData{
     char name[MAX_USERNAME_LEN];
-    uint64_t idx;
+    uint32_t idx;
     uint8_t beer;
     uint8_t water;
     uint8_t shots;
@@ -32,7 +32,7 @@ typedef struct MessageData {
 class Message {
     public:
         void begin(ESP32Time* rtc);
-        void add_peer(uint8_t mac[]);
+        void add_peers(uint8_t** macs, uint8_t size);
         void send();
         UserData* getUser(int idx);
         uint8_t current_user_idx();
@@ -49,6 +49,8 @@ class Message {
         void storeData();
         void loadData();
         ESP32Time* rtc;
+        uint8_t num_peers;
+        uint8_t** peers;
 
 };
 

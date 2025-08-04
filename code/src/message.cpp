@@ -1,6 +1,7 @@
 #include "message.h"
 
 Message* Message::_instance = nullptr;
+bool data_was_sent = false;
 
 void globalOnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     if (Message::_instance != nullptr) {
@@ -109,6 +110,10 @@ void Message::begin(ESP32Time* rtc) {
         #ifdef DEBUG
         Serial.println("Error initializing ESP-NOW");
         #endif
+    }else{
+        #ifdef DEBUG
+        Serial.println("OK initializing ESP-NOW");
+        #endif
     }
 
     esp_now_register_recv_cb(esp_now_recv_cb_t(globalOnDataRecv));
@@ -150,6 +155,7 @@ void Message::handleOnDataRecv(const uint8_t * mac, const uint8_t *incomingData,
 
 void Message::handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 
+    #ifdef DEBUG
     char macStr[18];
     Serial.print("Packet to: ");
     // Copies the sender mac address to a string
@@ -158,23 +164,33 @@ void Message::handleOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t st
     Serial.print(macStr);
     Serial.print(" send status:\t");
     Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+    #endif
+
+    data_was_sent = true;
 }
 
 
-void Message::add_peer(uint8_t mac[]) {
-    memcpy(peerInfo.peer_addr, mac, 6);
+void Message::add_peers(uint8_t** macs, uint8_t size) {
 
-    if (esp_now_add_peer(&peerInfo) != ESP_OK){
-        #ifdef DEBUG
-        Serial.println("Failed to add peer");
-        #endif
-    }else{
-        #ifdef DEBUG
-        Serial.println("Added peer");
-        #endif
+    this->peers = macs;
+    this->num_peers = size;
+
+    for(int i = 0; i < size; i++){
+        memcpy(peerInfo.peer_addr, macs[i], 6);
+
+        if (esp_now_add_peer(&peerInfo) != ESP_OK){
+            #ifdef DEBUG
+            Serial.println("Failed to add peer");
+            #endif
+        }else{
+            #ifdef DEBUG
+            Serial.println("Added peer");
+            #endif
+        }
     }
 
 }
+
 
 void Message::send() {
 
@@ -183,15 +199,28 @@ void Message::send() {
 
     this->storeData();
 
-    esp_err_t result = esp_now_send(NULL, (uint8_t *) &this->send_message, sizeof(MessageData));
-
     #ifdef DEBUG
-    if (result == ESP_OK) {
-        Serial.println("Sent with success");
-    }
-    else {
-        Serial.print("Error sending the data; Status:");
-        Serial.println(esp_err_to_name(result));
-    }
+    Serial.print("Message Size: ");
+    Serial.println(sizeof(MessageData));
     #endif
+
+    data_was_sent = true;
+    for(int i = 0; i < this->num_peers; i++){
+
+        while(data_was_sent == false){
+            __asm__("nop");
+        }
+        data_was_sent = false;
+
+        esp_err_t result = esp_now_send(this->peers[i], (uint8_t *) &this->send_message, sizeof(MessageData));
+        #ifdef DEBUG
+        if (result == ESP_OK) {
+            Serial.println("Sent with success");
+        }
+        else {
+            Serial.print("Error sending the data; Status:");
+            Serial.println(esp_err_to_name(result));
+        }
+        #endif
+    }
 }
