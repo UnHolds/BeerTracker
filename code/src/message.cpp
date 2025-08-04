@@ -183,14 +183,15 @@ void Message::send() {
 
     this->storeData();
 
-    esp_err_t result = esp_now_send(0, (uint8_t *) &this->send_message, sizeof(MessageData));
+    esp_err_t result = esp_now_send(NULL, (uint8_t *) &this->send_message, sizeof(MessageData));
 
     #ifdef DEBUG
     if (result == ESP_OK) {
         Serial.println("Sent with success");
     }
     else {
-        Serial.println("Error sending the data");
+        Serial.print("Error sending the data; Status:");
+        Serial.println(esp_err_to_name(result));
     }
     #endif
 }
