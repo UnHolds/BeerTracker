@@ -45,6 +45,8 @@ class Display {
         int main_menu_idx = 0;
         Message* message;
         int submenu_idx = -1;
+        int cat_unlock_step = 0;
+        InputType cat_unlock_seq[8] = {InputType::UP, InputType::UP, InputType::DOWN, InputType::DOWN, InputType::UP, InputType::DOWN, InputType::LEFT, InputType::RIGHT};
 
         void print_center_x(String text, int y_pos, int text_size);
         void print_x_y(String text, int x_pos, int y_pos, int text_size);
@@ -59,6 +61,8 @@ class Display {
         void set_time(InputType input);
         void print_icon(Icon icon, int x_pos, int y_pos);
         void print_rank(Menu menu);
+        void cat_unlock(InputType input);
+        void check_and_print_crown(Menu menu);
 };
 
 

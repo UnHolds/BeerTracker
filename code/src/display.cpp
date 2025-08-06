@@ -48,7 +48,7 @@ void Display::splash_screen() {
     buf.append(this->version);
     this->print_center_x(buf.c_str(), 50, 1);
     this->display.display();
-    delay(2000);
+    delay(SPLASH_SCREEN_TIME);
     this->display.clearDisplay();
     this->display.display();
 }
@@ -214,29 +214,31 @@ void Display::set_time(InputType input) {
     long epoch = this->rtc->getEpoch();
     long change = 0;
 
+    int offset = 42;
+
     switch(this->submenu_idx) {
         case 0: //year
-            this->print_center_x("YEAR", 1, 1);
+            this->print_center_x("YEAR", offset, 1);
             sprintf(num_s, "%d", this->rtc->getYear());
             change = 31556926;
         break;
         case 1: //month
-            this->print_center_x("MONTH", 1, 1);
+            this->print_center_x("MONTH", offset, 1);
             sprintf(num_s, "%d", this->rtc->getMonth());
             change = 2629743;
         break;
         case 2: //day
-            this->print_center_x("DAY", 1, 1);
+            this->print_center_x("DAY", offset, 1);
             sprintf(num_s, "%d", this->rtc->getDay());
             change = 86400 ;
         break;
         case 3: //hour
-            this->print_center_x("HOUR", 1, 1);
+            this->print_center_x("HOUR", offset, 1);
             sprintf(num_s, "%d", this->rtc->getHour());
             change = 60 * 24;
         break;
         case 4: //min
-            this->print_center_x("MINUTE", 1, 1);
+            this->print_center_x("MINUTE", offset, 1);
             sprintf(num_s, "%d", this->rtc->getMinute());
             change = 60;
         break;
@@ -380,11 +382,65 @@ void Display::print_rank(Menu menu) {
     this->display.println(buff);
 }
 
+void Display::cat_unlock(InputType input) {
+
+    int num_steps = sizeof(this->cat_unlock_seq) / sizeof(this->cat_unlock_seq[0]);
+
+    if(this->cat_unlock_step < num_steps && input != InputType::NONE){
+        if(input == this->cat_unlock_seq[this->cat_unlock_step]){
+            this->cat_unlock_step++;
+        }else{
+            this->cat_unlock_step = 0;
+        }
+    }
+    if(this->cat_unlock_step >= num_steps || ALWAYS_CAT){
+        this->print_icon(Icon::CAT, 110, 32);
+    }
+
+}
+
+void Display::check_and_print_crown(Menu menu){
+    //no leaderboard for others
+    if(menu != Menu::BEER && menu != Menu::WATER && menu != Menu::SHOT) {
+        return;
+    }
+    int max_count = -1;
+    int max_idx = -1;
+
+    for(int i = 0; i < NUM_USER; i++) {
+        uint8_t cur = 0;
+        if(menu == Menu::BEER) {
+            cur = this->message->send_message.users[i].beer;
+        }
+        if(menu == Menu::WATER) {
+            cur = this->message->send_message.users[i].water;
+        }
+        if(menu == Menu::SHOT) {
+            cur = this->message->send_message.users[i].shots;
+        }
+
+        if(cur > max_count){
+            max_idx = i;
+            max_count = cur;
+        }
+    }
+    if(max_idx == this->message->send_message.user_id){
+        if(this->cat_unlock_step >= sizeof(this->cat_unlock_seq) / sizeof(this->cat_unlock_seq[0]) || ALWAYS_CAT){
+             this->print_icon(Icon::CROWN_CAT, 106, 19);
+        }else{
+            this->print_icon(Icon::CROWN, 110,32);
+        }
+
+    }
+}
+
 void Display::update_main_menu(InputType input) {
 
     int num_entries = 7;
 
-    this->print_icon(Icon::CAT, 110, 32);
+    //very important check
+    cat_unlock(input);
+
 
     if(input == InputType::UP) {
         this->main_menu_idx = (this->main_menu_idx + num_entries - 1) % num_entries;
@@ -399,6 +455,7 @@ void Display::update_main_menu(InputType input) {
             this->print_icon(Icon::BEER, 64, 32);
             this->print_center_x("Beer", 0, 1);
             this->print_rank(Menu::BEER);
+            this->check_and_print_crown(Menu::BEER);
             if(input == InputType::CENTER){
                 this->menu = Menu::BEER;
                 this-> update(InputType::NONE);
@@ -408,6 +465,7 @@ void Display::update_main_menu(InputType input) {
             this->print_icon(Icon::WATER, 64, 32);
             this->print_center_x("Water", 0, 1);
             this->print_rank(Menu::WATER);
+            this->check_and_print_crown(Menu::WATER);
             if(input == InputType::CENTER){
                 this->menu = Menu::WATER;
                 this-> update(InputType::NONE);
@@ -417,6 +475,7 @@ void Display::update_main_menu(InputType input) {
             this->print_icon(Icon::SHOT, 64, 32);
             this->print_center_x("Shot", 0, 1);
             this->print_rank(Menu::SHOT);
+            this->check_and_print_crown(Menu::SHOT);
             if(input == InputType::CENTER){
                 this->menu = Menu::SHOT;
                 this-> update(InputType::NONE);

@@ -19,6 +19,10 @@ static String RST_USERNAMES[NUM_USER] = {"Alex", "Luggi", "Alina", "Jan", "Simi"
 
 #define LOCK_SCREEN_ENABLE false
 
-#define VERSION "1.4"
+#define SPLASH_SCREEN_TIME 1000 //ms
+
+#define ALWAYS_CAT false
+
+#define VERSION "1.6"
 
 #endif
