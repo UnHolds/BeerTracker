@@ -59,9 +59,10 @@ void Display::print_battery() {
     float bat = 3.3 / 4095.0 * analogRead(BAT_PIN);
 
     if(pwr > 2){
+
         this->print_x_y("PWR", this->width - 6 * 3, 0, 1);
     } else {
-        this->print_x_y("BAT", this->width - 6 * 3, 0, 1);
+        this->print_icon(Icon::BAT, 128-8, 8/2);
         //snprintf (bat_v, sizeof(bat_v), "%.2fVV", bat);
         //this->print_x_y(bat_v, this->width - 6 * (sizeof(bat_v)), 0, 1);
     }
@@ -69,8 +70,8 @@ void Display::print_battery() {
 
 void Display::lock_screen(){
     this->clear();
-    this->print_center_x("LOCKED", 24, 2);
-    this->print_center_x("UNLK_SQ: <- -> <- ->", 45, 1);
+    this->print_icon(Icon::LOCKED, 64, 20);
+    this->print_center_x("To Unlock: < > < >", 42, 1);
     this->display.display();
 }
 
