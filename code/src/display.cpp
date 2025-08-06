@@ -300,9 +300,91 @@ void Display::show_users(InputType input) {
     }
 }
 
+void Display::print_rank(Menu menu) {
+
+    //no leaderboard for others
+    if(menu != Menu::BEER && menu != Menu::WATER && menu != Menu::SHOT) {
+        return;
+    }
+
+    int x_pos = 20;
+    int y_pos = 40;
+
+    int first_count = -1;
+    char* first_name;
+    int second_count = -1;
+    char* second_name;
+    int third_count = -1;
+    char* third_name;
+
+    for(int i = 0; i < NUM_USER; i++) {
+        uint8_t cur = 0;
+        if(menu == Menu::BEER) {
+            cur = this->message->send_message.users[i].beer;
+        }
+        if(menu == Menu::WATER) {
+            cur = this->message->send_message.users[i].water;
+        }
+        if(menu == Menu::SHOT) {
+            cur = this->message->send_message.users[i].shots;
+        }
+
+        if(cur > first_count){
+            //movve second
+            third_count = second_count;
+            third_name = second_name;
+            //move third
+            second_count = first_count;
+            second_name = first_name;
+
+            //new first
+            first_count = cur;
+            first_name = this->message->send_message.users[i].name;
+        }else if(cur > second_count){
+            //movve second
+            third_count = second_count;
+            third_name = second_name;
+
+            //new second
+            second_count = cur;
+            second_name = this->message->send_message.users[i].name;
+        }else if(cur > third_count){
+             //new third
+            third_count = cur;
+            third_name = this->message->send_message.users[i].name;
+        }
+    }
+
+
+    char buff[3];
+    buff[2] = '\0';
+
+    this->print_icon(Icon::RANK, x_pos, y_pos);
+
+    this->display.setTextSize(1);
+    this->display.setTextColor(WHITE);
+    //first place
+    this->display.setCursor(x_pos-5, y_pos-20);
+    buff[0] = toupper(first_name[0]);
+    buff[1] = toupper(first_name[strlen(first_name) - 1]);
+    this->display.println(buff);
+    //second placce
+    this->display.setCursor(x_pos-18, y_pos-13);
+    buff[0] = toupper(second_name[0]);
+    buff[1] = toupper(second_name[strlen(second_name) - 1]);
+    this->display.println(buff);
+    //third place
+    this->display.setCursor(x_pos+8, y_pos-8);
+    buff[0] = toupper(third_name[0]);
+    buff[1] = toupper(third_name[strlen(third_name) - 1]);
+    this->display.println(buff);
+}
+
 void Display::update_main_menu(InputType input) {
 
     int num_entries = 7;
+
+    this->print_icon(Icon::CAT, 110, 32);
 
     if(input == InputType::UP) {
         this->main_menu_idx = (this->main_menu_idx + num_entries - 1) % num_entries;
@@ -316,6 +398,7 @@ void Display::update_main_menu(InputType input) {
         case 0:
             this->print_icon(Icon::BEER, 64, 32);
             this->print_center_x("Beer", 0, 1);
+            this->print_rank(Menu::BEER);
             if(input == InputType::CENTER){
                 this->menu = Menu::BEER;
                 this-> update(InputType::NONE);
@@ -324,6 +407,7 @@ void Display::update_main_menu(InputType input) {
         case 1:
             this->print_icon(Icon::WATER, 64, 32);
             this->print_center_x("Water", 0, 1);
+            this->print_rank(Menu::WATER);
             if(input == InputType::CENTER){
                 this->menu = Menu::WATER;
                 this-> update(InputType::NONE);
@@ -332,6 +416,7 @@ void Display::update_main_menu(InputType input) {
         case 2:
             this->print_icon(Icon::SHOT, 64, 32);
             this->print_center_x("Shot", 0, 1);
+            this->print_rank(Menu::SHOT);
             if(input == InputType::CENTER){
                 this->menu = Menu::SHOT;
                 this-> update(InputType::NONE);
@@ -346,7 +431,8 @@ void Display::update_main_menu(InputType input) {
             };
         break;
         case 4:
-            this->print_menu("Reset");
+            this->print_icon(Icon::RESET, 64, 32);
+            this->print_center_x("Reset", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::RESET;
                 this-> reset(InputType::NONE);

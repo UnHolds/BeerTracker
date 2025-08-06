@@ -58,6 +58,7 @@ class Display {
         void show_users(InputType input);
         void set_time(InputType input);
         void print_icon(Icon icon, int x_pos, int y_pos);
+        void print_rank(Menu menu);
 };
 
 
