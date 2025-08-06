@@ -80,6 +80,12 @@ void Display::print_time() {
     sprintf(time_str, "%04d-%02d-%02d %02d:%02d:%02d", rtc->getYear(), rtc->getMonth(), rtc->getDay(), rtc->getHour(true), rtc->getMinute(), rtc->getSecond());
     this->print_center_x(time_str, 64-7, 1);
 }
+void Display::print_icon(Icon icon, int x_pos, int y_pos) {
+    int id = static_cast<int>(icon) & 0xFF;
+    int y_size = (static_cast<int>(icon) >> 8) & 0xFF;
+    int x_size = (static_cast<int>(icon) >> 16) & 0xFF;
+    this->display.drawBitmap(x_pos - x_size / 2, y_pos - y_size / 2, icon_array[id], x_size, y_size, WHITE);
+}
 
 void Display::update(InputType input) {
     this->display.clearDisplay();
@@ -94,24 +100,30 @@ void Display::update(InputType input) {
             this->update_main_menu(input);
         break;
         case Menu::BEER:
+            this->print_center_x("Beer", 0, 1);
             this->increment_menu(input, &this->message->send_message.users[this->message->send_message.user_id].beer);
         break;
         case Menu::SHOT:
+            this->print_center_x("Shot", 0, 1);
             this->increment_menu(input, &this->message->send_message.users[this->message->send_message.user_id].shots);
         break;
         case Menu::WATER:
+            this->print_center_x("Water", 0, 1);
             this->increment_menu(input, &this->message->send_message.users[this->message->send_message.user_id].water);
         break;
         case Menu::SELECT_USER:
+            this->print_center_x("WhoAmI", 0, 1);
             this->change_user(input);
         break;
         case Menu::RESET:
             this->reset(input);
         break;
         case Menu::SHOW_USERS:
+            this->print_center_x("Users", 0, 1);
             this->show_users(input);
         break;
         case Menu::SET_TIME:
+            this->print_center_x("Set Time", 0, 1);
             this->set_time(input);
         break;
     }
@@ -301,28 +313,32 @@ void Display::update_main_menu(InputType input) {
 
     switch(this->main_menu_idx) {
         case 0:
-            this->print_menu("Beer");
+            this->print_icon(Icon::BEER, 64, 32);
+            this->print_center_x("Beer", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::BEER;
                 this-> update(InputType::NONE);
             };
         break;
         case 1:
-            this->print_menu("Water");
+            this->print_icon(Icon::WATER, 64, 32);
+            this->print_center_x("Water", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::WATER;
                 this-> update(InputType::NONE);
             };
         break;
         case 2:
-            this->print_menu("Shot");
+            this->print_icon(Icon::SHOT, 64, 32);
+            this->print_center_x("Shot", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::SHOT;
                 this-> update(InputType::NONE);
             };
         break;
         case 3:
-            this->print_menu("Sel User");
+            this->print_icon(Icon::USER_SEL, 64, 32);
+            this->print_center_x("WhoAmI", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::SELECT_USER;
                 this-> change_user(InputType::NONE);
@@ -336,15 +352,17 @@ void Display::update_main_menu(InputType input) {
             };
         break;
         case 5:
-            this->print_menu("Users");
+            this->print_icon(Icon::USER, 64, 32);
+            this->print_center_x("Users", 0, 1);
             if(input == InputType::CENTER){
                 this->menu = Menu::SHOW_USERS;
                 this-> show_users(InputType::NONE);
             };
         break;
         case 6:
-            this->print_menu("Set Time");
-             if(input == InputType::CENTER){
+            this->print_icon(Icon::TIME, 64, 32);
+            this->print_center_x("Set Time", 0, 1);
+            if(input == InputType::CENTER){
                 this->menu = Menu::SET_TIME;
                 this-> set_time(InputType::NONE);
             };

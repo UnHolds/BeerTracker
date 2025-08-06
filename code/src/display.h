@@ -7,6 +7,7 @@
 #include <Adafruit_GFX.h>
 #include "input.h"
 #include "message.h"
+#include "icons.h"
 #include <ESP32Time.h>
 
 
@@ -56,6 +57,7 @@ class Display {
         void print_time();
         void show_users(InputType input);
         void set_time(InputType input);
+        void print_icon(Icon icon, int x_pos, int y_pos);
 };
 
 

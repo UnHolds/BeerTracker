@@ -6,7 +6,7 @@
 #define NUM_USER 7
 #define MAX_USERNAME_LEN 16
 
-static String RST_USERNAMES[NUM_USER] = {"UnHold", "Luggi", "Tabaluga", "Someone", "Simi", "Bene", "Martin"};
+static String RST_USERNAMES[NUM_USER] = {"Alex", "Luggi", "Alina", "Jan", "Simi", "Bene", "Martin"};
 
 #define secToMs(secs) secs * 1000
 #define secToUs(secs) secs * 1000 * 1000
