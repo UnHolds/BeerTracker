@@ -42,11 +42,19 @@ void Display::print_center_x(String text, int y_pos, int text_size) {
 
 void Display::splash_screen() {
 
-    this->print_center_x("Beer-Track", 15, 2);
-    this->print_center_x("by @UnHold", 35, 1);
+    this->print_center_x("Beer-Track", 10, 2);
+    this->print_center_x("by @UnHold", 30, 1);
     std::string buf("Version: ");
     buf.append(this->version);
-    this->print_center_x(buf.c_str(), 50, 1);
+    this->print_center_x(buf.c_str(), 45, 1);
+
+    #ifdef COMMIT_HASH
+    std::string buf2("(");
+    buf2.append(COMMIT_HASH);
+    buf2.append(")");
+    this->print_center_x(buf2.c_str(), 55, 1);
+    #endif
+
     this->display.display();
     delay(SPLASH_SCREEN_TIME);
     this->display.clearDisplay();
@@ -406,6 +414,7 @@ void Display::check_and_print_crown(Menu menu){
     }
     int max_count = -1;
     int max_idx = -1;
+    int user_id = this->message->send_message.user_id;
 
     for(int i = 0; i < NUM_USER; i++) {
         uint8_t cur = 0;
@@ -419,12 +428,12 @@ void Display::check_and_print_crown(Menu menu){
             cur = this->message->send_message.users[i].shots;
         }
 
-        if(cur > max_count){
+        if(cur > max_count || (cur == max_count && i == user_id)){
             max_idx = i;
             max_count = cur;
         }
     }
-    if(max_idx == this->message->send_message.user_id){
+    if(max_idx == user_id){
         if(this->cat_unlock_step >= sizeof(this->cat_unlock_seq) / sizeof(this->cat_unlock_seq[0]) || ALWAYS_CAT){
              this->print_icon(Icon::CROWN_CAT, 106, 19);
         }else{

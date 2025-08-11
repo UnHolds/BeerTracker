@@ -23,6 +23,6 @@ static String RST_USERNAMES[NUM_USER] = {"Alex", "Luggi", "Alina", "Jan", "Simi"
 
 #define ALWAYS_CAT false
 
-#define VERSION "1.6"
+#define VERSION "2.0"
 
 #endif

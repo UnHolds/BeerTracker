@@ -183,6 +183,9 @@ void setup() {
     if(screen_locked) {
         display.lock_screen();
     }
+
+    //fixes input on startup
+    input.get_input();
 }
 
 
