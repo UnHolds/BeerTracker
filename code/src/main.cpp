@@ -180,7 +180,7 @@ void setup() {
 
     last_command = millis();
 
-    if(screen_locked) {
+    if(screen_locked && wakeup_reason != ESP_SLEEP_WAKEUP_TIMER) {
         display.lock_screen();
     }
 
